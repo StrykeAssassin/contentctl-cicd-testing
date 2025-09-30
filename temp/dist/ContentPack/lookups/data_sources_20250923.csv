@@ -1,0 +1,3 @@
+name,id,author,source,sourcetype,separator,supported_TA_name,supported_TA_version,supported_TA_url,description
+Linux Secure,9a47d88b-1b17-49ce-a0ef-b440ddbd98bb,"Patrick Bareiss, Splunk",/var/log/secure,linux_secure,,Splunk Add-on for Unix and Linux,10.1.0,https://splunkbase.splunk.com/app/833,"Logs authentication and authorization events on a Linux system, including login attempts, SSH connections, and privilege escalation activities."
+Sysmon EventID 1,b375f4d1-d7ca-4bc0-9103-294825c0af17,"Patrick Bareiss, Splunk",XmlWinEventLog:Microsoft-Windows-Sysmon/Operational,xmlwineventlog,EventID,Splunk Add-on for Sysmon,4.0.0,https://splunkbase.splunk.com/app/5709/,Data source object for Sysmon EventID 1

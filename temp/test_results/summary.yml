@@ -1,0 +1,95 @@
+summary:
+  mode: All
+  enable_integration_testing: false
+  success: false
+  total_detections: 2
+  total_tested_detections: 0
+  total_pass: 0
+  total_fail: 0
+  total_skipped: 0
+  total_untested: 2
+  total_production: 0
+  total_experimental: 0
+  total_deprecated: 0
+  total_manual: 0
+  success_rate: UKNOWN
+tested_detections: []
+skipped_detections: []
+untested_detections:
+- name: Anomalous usage of 7zip
+  type: Anomaly
+  production_status: production
+  status: null
+  source_category: endpoint
+  data_source:
+  - Sysmon EventID 1
+  search: '| tstats `security_content_summariesonly` count min(_time) as firstTime
+    max(_time) as lastTime from datamodel=Endpoint.Processes where Processes.parent_process_name
+    IN ("rundll32.exe", "dllhost.exe") Processes.process_name=*7z* by Processes.dest
+    Processes.user Processes.parent_process Processes.process_name Processes.process
+    Processes.process_id Processes.parent_process_id Processes.parent_process_name
+    | `drop_dm_object_name(Processes)` | `security_content_ctime(firstTime)` | `security_content_ctime(lastTime)`|
+    `anomalous_usage_of_7zip_filter`'
+  file_path: detections/endpoint/anomalous_usage_of_7zip.yml
+  manual_test: null
+  success: false
+  tests:
+  - name: True Positive Test
+    test_type: unit
+    success: false
+    message: NO RESULT - Test not run
+  - name: True Positive Test
+    test_type: integration
+    success: true
+    message: 'TEST SKIPPED: Skipping all integration tests'
+    exception: null
+    status: skip
+    duration: 0
+    wait_duration: null
+    resultCount: null
+    runDuration: null
+- name: Potential password in username
+  type: Hunting
+  production_status: production
+  status: skip
+  source_category: endpoint
+  data_source:
+  - Linux Secure
+  search: '| tstats `security_content_summariesonly` earliest(_time) AS starttime
+    latest(_time) AS endtime latest(sourcetype) AS sourcetype values(Authentication.src)
+    AS src values(Authentication.dest) AS dest count FROM datamodel=Authentication
+    WHERE nodename=Authentication.Failed_Authentication BY "Authentication.user" |
+    `drop_dm_object_name(Authentication)` | lookup ut_shannon_lookup word AS user
+    | where ut_shannon>3 AND len(user)>=8 AND mvcount(src) == 1 | sort count, - ut_shannon
+    | eval incorrect_cred=user | eval endtime=endtime+1000 | map maxsearches=70 search="|
+    tstats `security_content_summariesonly` earliest(_time) AS starttime latest(_time)
+    AS endtime latest(sourcetype) AS sourcetype values(Authentication.src) AS src
+    values(Authentication.dest) AS dest count FROM datamodel=Authentication WHERE
+    nodename=Authentication.Successful_Authentication Authentication.src=\"$src$\"
+    Authentication.dest=\"$dest$\" sourcetype IN (\"$sourcetype$\") earliest=\"$starttime$\"
+    latest=\"$endtime$\" BY \"Authentication.user\" | `drop_dm_object_name(\"Authentication\")`
+    | `potential_password_in_username_false_positive_reduction` | eval incorrect_cred=\"$incorrect_cred$\"
+    | eval ut_shannon=\"$ut_shannon$\" | sort count" | where user!=incorrect_cred
+    | outlier action=RM count | `potential_password_in_username_filter`'
+  file_path: detections/endpoint/potential_password_in_username.yml
+  manual_test: Due to an existing bug with eventtypes/tags in the splunk-add-on-for-unix-and-linux
+    TA, this detection does not work with the latest version of the TA 10.0.0. You
+    can refer to the following link for more information - https://splunk.atlassian.net/browse/ADDON-81872.
+    This detection works as expected with TAs prior to 10.0.0.
+  success: true
+  tests:
+  - name: True Positive Test
+    test_type: manual
+    success: true
+    message: 'TEST SKIPPED (MANUAL): Detection marked as ''manual_test'' with explanation:
+      Due to an existing bug with eventtypes/tags in the splunk-add-on-for-unix-and-linux
+      TA, this detection does not work with the latest version of the TA 10.0.0. You
+      can refer to the following link for more information - https://splunk.atlassian.net/browse/ADDON-81872.
+      This detection works as expected with TAs prior to 10.0.0.'
+    exception: null
+    status: skip
+    duration: 0
+    wait_duration: null
+    resultCount: null
+    runDuration: null
+percent_complete: 0.0%
